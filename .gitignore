@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build output
+.next/
+dist/
+out/
+build/
+
+# Uploads and Temp files
+uploads/
+*.zip
+
+# Test files generated
+test-site-v1/
+test-site-v2/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
