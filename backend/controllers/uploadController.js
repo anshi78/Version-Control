@@ -7,13 +7,16 @@ const generateHash = (buffer) => {
     return crypto.createHash('sha256').update(buffer).digest('hex');
 };
 
+/**
+ * Upload a blob to Supabase Storage using content-addressable storage.
+ * Skips upload if the blob already exists (deduplication via upsert: false).
+ */
 const uploadBlob = async (hash, buffer, mimeType) => {
-    // Attempt to upload without upsert. If it errors because it already exists, that's fine.
     const { data, error } = await supabase.storage
         .from('versions') // Requires creating a bucket named "versions" in Supabase
         .upload(`blobs/${hash}`, buffer, {
             contentType: mimeType,
-            upsert: false // This will cause Duplicates to fail, saving us a check!
+            upsert: false // Duplicates will fail, saving us a check
         });
         
     if (error) {
@@ -36,6 +39,10 @@ exports.uploadVersion = async (req, res) => {
 
     try {
         // 1. Locking Mechanism using Supabase Row
+        // Clean up any lock older than 5 minutes (auto-TTL)
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        await supabase.from('locks').delete().eq('site_id', siteId).lt('locked_at', fiveMinutesAgo);
+
         const { error: lockError } = await supabase
             .from('locks')
             .insert([{ site_id: siteId, locked_by: userId }]);
@@ -71,8 +78,12 @@ exports.uploadVersion = async (req, res) => {
             if (filePath.endsWith('.html')) mimeType = 'text/html';
             else if (filePath.endsWith('.css')) mimeType = 'text/css';
             else if (filePath.endsWith('.js')) mimeType = 'application/javascript';
+            else if (filePath.endsWith('.json')) mimeType = 'application/json';
+            else if (filePath.endsWith('.png')) mimeType = 'image/png';
+            else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) mimeType = 'image/jpeg';
+            else if (filePath.endsWith('.svg')) mimeType = 'image/svg+xml';
 
-            // 3. Upload Blob (Deduplication handled inside uploadBlob via `upsert: false`)
+            // 3. Upload Blob to Supabase Storage (Deduplication via upsert: false)
             const isNew = await uploadBlob(hash, content, mimeType);
             if (isNew) {
                 newBlobsCount++;

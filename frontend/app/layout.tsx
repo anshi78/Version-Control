@@ -1,10 +1,17 @@
 import { ClerkProvider } from '@clerk/nextjs'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import type { Metadata } from 'next'
 
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+})
+
 export const metadata: Metadata = {
-  title: 'Web VCS Dashboard',
-  description: 'Version Control System for Websites',
+  title: 'WebVCS — Website Version Control',
+  description: 'Deploy, version, compare, and rollback your websites with confidence.',
 }
 
 export default function RootLayout({
@@ -14,8 +21,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className="min-h-screen bg-neutral-950 text-white selection:bg-indigo-500/30">
+      <html lang="en" className={inter.variable}>
+        <body className={`${inter.className} min-h-screen antialiased`}>
           {children}
         </body>
       </html>

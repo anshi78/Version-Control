@@ -1,7 +1,7 @@
 -- Supabase Schema Initialization for Website Version Control System
 
 -- 1. Sites Table
-CREATE TABLE sites (
+CREATE TABLE IF NOT EXISTS sites (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   owner_id TEXT NOT NULL, -- Clerk User ID
@@ -10,7 +10,7 @@ CREATE TABLE sites (
 );
 
 -- 2. Versions Table
-CREATE TABLE versions (
+CREATE TABLE IF NOT EXISTS versions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   site_id UUID NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
   version_number INTEGER NOT NULL,
@@ -20,11 +20,21 @@ CREATE TABLE versions (
 );
 
 -- Add foreign key to sites for current_version_id
-ALTER TABLE sites ADD CONSTRAINT fk_current_version
-  FOREIGN KEY (current_version_id) REFERENCES versions(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_name = 'fk_current_version'
+        AND table_name = 'sites'
+    ) THEN
+        ALTER TABLE sites ADD CONSTRAINT fk_current_version
+        FOREIGN KEY (current_version_id) REFERENCES versions(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- 3. Audit Logs Table
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   site_id UUID NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
   action TEXT NOT NULL CHECK (action IN ('UPLOAD', 'ROLLBACK')),
@@ -35,7 +45,7 @@ CREATE TABLE audit_logs (
 );
 
 -- 4. Locks Table
-CREATE TABLE locks (
+CREATE TABLE IF NOT EXISTS locks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   site_id UUID NOT NULL UNIQUE REFERENCES sites(id) ON DELETE CASCADE,
   locked_by TEXT NOT NULL, -- Clerk user ID
