@@ -27,6 +27,7 @@ router.post('/sites/:siteId/versions/:versionId/rollback', versionController.rol
 router.get('/versions/compare/:baseVersionId/:targetVersionId', versionController.getDiff);
 
 // Audit Logs
+router.get('/audit-logs', auditController.getGlobalActivityLogs);
 router.get('/sites/:siteId/audit-logs', auditController.getAuditLogs);
 
 module.exports = router;

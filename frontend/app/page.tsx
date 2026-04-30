@@ -16,6 +16,9 @@ import {
   Clock,
   FolderOpen,
   Sparkles,
+  Activity,
+  Upload,
+  RotateCcw,
 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -24,6 +27,7 @@ export default function Dashboard() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const [sites, setSites] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -36,11 +40,27 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setSites(data);
+        // Fetch global activity logs
+        await fetchActivityLogs(token);
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchActivityLogs = async (token: any) => {
+    try {
+      const res = await fetch(`${API_URL}/api/audit-logs?limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const logs = await res.json();
+        setActivityLogs(logs);
+      }
+    } catch (err) {
+      console.error("Error fetching activity logs:", err);
     }
   };
 
@@ -150,9 +170,9 @@ export default function Dashboard() {
                 <span className="badge-warning">Recent</span>
               </div>
               <p className="text-3xl font-bold text-slate-900">
-                {sites.length > 0
+                {activityLogs.length > 0
                   ? new Date(
-                      sites[sites.length - 1].created_at
+                      activityLogs[0].createdAt || activityLogs[0].timestamp
                     ).toLocaleDateString()
                   : "—"}
               </p>
@@ -235,6 +255,92 @@ export default function Dashboard() {
                     </div>
                   </Link>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Activity Section */}
+          <div
+            id="activity"
+            className="animate-slide-up stagger-5 mt-12"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Activity
+                </h2>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Latest deployments and rollbacks across your projects
+                </p>
+              </div>
+            </div>
+
+            {activityLogs.length === 0 ? (
+              <div className="card rounded-2xl p-16 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                  <Activity className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  No activity yet
+                </h3>
+                <p className="text-slate-500 mb-6 max-w-md mx-auto">
+                  Deploy your first website version to start tracking activity.
+                </p>
+              </div>
+            ) : (
+              <div className="card rounded-xl overflow-hidden">
+                <div className="divide-y divide-slate-100">
+                  {activityLogs.map((log) => (
+                    <div
+                      key={log._id}
+                      className="p-4 hover:bg-slate-50 transition-colors duration-200"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            {log.action === "UPLOAD" ? (
+                              <Upload className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <RotateCcw className="w-5 h-5 text-amber-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-900">
+                              {log.action === "UPLOAD"
+                                ? "Deployed new version"
+                                : "Rolled back version"}
+                            </p>
+                            <p className="text-sm text-slate-500 mt-0.5">
+                              <Link
+                                href={`/sites/${log.siteId}`}
+                                className="text-indigo-600 hover:text-indigo-700 font-medium"
+                              >
+                                {log.siteName}
+                              </Link>
+                              {log.description && ` • ${log.description}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-4">
+                          <p className="text-xs text-slate-500">
+                            {new Date(
+                              log.createdAt || log.timestamp
+                            ).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {new Date(
+                              log.createdAt || log.timestamp
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

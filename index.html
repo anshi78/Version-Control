@@ -1,14 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<title>Color Changer</title>
 </head>
-
-<body>
-
+<body style="text-align:center; margin-top:60px;">
+<h2>Background Color Changer</h2>
+<h4>Anshika_13</h4>
+<button onclick="start()">START</button>
+<button onclick="pause()">PAUSE</button>
+<button onclick="reset()">RESET</button>
+<script>
+let colors = ["red","green","blue","yellow","pink","orange"];
+let i = 0;
+let timer;
+function start(){
+    if(!timer){
+        timer = setInterval(function(){
+            document.body.style.backgroundColor = colors[i];
+            i = (i+1) % colors.length;
+        },1000);
+    }
+}
+function pause(){
+    clearInterval(timer);
+    timer = null;
+}
+function reset(){
+    clearInterval(timer);
+    timer = null;
+    document.body.style.backgroundColor = "white";
+}
+</script>
 </body>
-
 </html>
+
+
