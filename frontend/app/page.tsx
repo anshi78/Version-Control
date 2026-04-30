@@ -23,17 +23,43 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+// Type definitions
+interface Site {
+  _id: string;
+  name: string;
+  owner_id: string;
+  currentVersionId: {
+    versionNumber: number;
+    _id: string;
+  } | null;
+  created_at: string;
+}
+
+interface ActivityLog {
+  _id: string;
+  action: "UPLOAD" | "ROLLBACK";
+  userId: string;
+  versionId: string | null;
+  siteId: string;
+  siteName: string;
+  description: string;
+  createdAt: string;
+  timestamp: string;
+}
+
 export default function Dashboard() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
-  const [sites, setSites] = useState<any[]>([]);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchSites = async () => {
     try {
       const token = await getToken();
+      if (!token) return;
+      
       const res = await fetch(`${API_URL}/api/sites`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -50,7 +76,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchActivityLogs = async (token: any) => {
+  const fetchActivityLogs = async (token: string) => {
     try {
       const res = await fetch(`${API_URL}/api/audit-logs?limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
